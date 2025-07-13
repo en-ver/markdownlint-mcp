@@ -1,0 +1,21 @@
+node_modules
+
+# Byte-code files
+*.pyc
+__pycache__
+
+# Virtual environment
+.venv
+venv
+env
+
+# Distribution and packaging
+*.egg
+*.egg-info
+dist
+build
+
+# Editor/OS specific
+.DS_Store
+.vscode
+.idea

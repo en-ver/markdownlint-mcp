@@ -1,0 +1,20 @@
+[project]
+name = "markdownlint-mcp"
+version = "0.1.0"
+description = "A comprehensive FastMCP server to lint and fix markdown violations using markdownlint-cli2."
+readme = "README.md"
+authors = [
+    { name = "en-ver" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastmcp",
+    "httpx"
+]
+
+[project.scripts]
+markdownlint-mcp-server = "markdownlint_mcp.main:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
