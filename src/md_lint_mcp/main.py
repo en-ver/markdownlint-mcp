@@ -1,4 +1,4 @@
-# src/markdownlint_mcp/main.py
+# src/md_lint_mcp/main.py
 
 import asyncio
 from pathlib import Path
@@ -9,7 +9,7 @@ from importlib import metadata
 from fastmcp import FastMCP
 
 mcp = FastMCP(
-    name="MarkdownLint MCP",
+    name="MD Lint MCP",
     instructions="This is a Markdown linting MCP server. You can use the 'lint' tool to check for and fix formatting issues in Markdown files ('.md', '.markdown').",
 )
 
@@ -27,7 +27,8 @@ async def lint(file_path: str) -> str:
     inline directives to ignore them.
 
     Args:
-        file_path: The absolute or relative path to the Markdown file to lint.
+        file_path: The absolute path to the Markdown file to lint. File URLs
+            (e.g., 'file:///...') are not supported.
 
     Returns:
         A string indicating either that no violations were found or a
@@ -73,7 +74,7 @@ async def lint(file_path: str) -> str:
         return f"""The file has the following violations:
 {remaining_errors}
 
-You can address the violations listed above. After you have addressed the violations, please run `lint` again to confirm the file is clean.
+I recommend addressing all of the violations listed above at once, as it is inefficient to fix them one by one. After you have addressed all of them, please run `lint` again to confirm the file is clean.
 
 NOTE: In some cases, you may determine that a rule should be ignored for a specific line. If so, you can first propose the change to the user and get their confirmation. If the user agrees, you can then use the 'get_inline_directives' resource to learn how to disable the rule and apply the change.
 """
@@ -128,15 +129,15 @@ def run():
     """This is the function the MCP client will call to start our server."""
     if "--version" in sys.argv:
         try:
-            version = metadata.version("markdownlint-mcp")
+            version = metadata.version("md-lint-mcp")
         except metadata.PackageNotFoundError:
             version = "0.1.0"  # Fallback for local dev
-        print(f"markdownlint-mcp-server {version}")
+        print(f"md-lint-mcp-server {version}")
         return
 
     if "--help" in sys.argv or "-h" in sys.argv:
         print(
-            """Usage: markdownlint-mcp-server [options]
+            """Usage: md-lint-mcp-server [options]
 
 An intelligent "Markdown Linter" as a set of tools for an AI agent.
 
@@ -152,8 +153,8 @@ Options:
     mcp.run(show_banner=False)
 
 
-# This allows you to run the server directly with `python -m src.markdownlint_mcp.main` for testing
+# This allows you to run the server directly with `python -m src.md_lint_mcp.main` for testing
 if __name__ == "__main__":
-    print("Starting MarkdownLint MCP Server for local testing...")
+    print("Starting MD Lint MCP Server for local testing...")
     print("Navigate to http://localhost:8000/tools/lint in your browser to test.")
     mcp.run(transport="http", host="127.0.0.1", port=8000, show_banner=False)

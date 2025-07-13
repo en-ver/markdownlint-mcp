@@ -1,5 +1,5 @@
 [project]
-name = "markdownlint-mcp"
+name = "md-lint-mcp"
 version = "0.1.0"
 description = "A comprehensive FastMCP server to lint and fix markdown violations using markdownlint-cli2."
 readme = "README.md"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-markdownlint-mcp-server = "markdownlint_mcp.main:run"
+md-lint-mcp-server = "md_lint_mcp.main:run"
 
 [build-system]
 requires = ["hatchling"]

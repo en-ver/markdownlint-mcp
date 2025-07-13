@@ -1,4 +1,4 @@
-# MarkdownLint MCP Server
+# MD Lint MCP Server
 
 This project provides an intelligent "Markdown Linter" as a set of tools for an
 AI agent. It's an on-demand server that can be launched by a client (like
@@ -21,7 +21,7 @@ entire linting process.
     (like a heading that needs rephrasing), the server pinpoints the exact
     problem. This lets you focus on creating great content, not on fighting
     with formatting rules.
-* **On-Demand and Lightweight**: The server only runs when needed, so it won’t
+* **On-Demand and Lightweight**: The server only runs when needed, so it won
     bog down your system. It’s there when you need it and gone when you don’t.
 * **Customizable for Your Projects**: Do you have a specific style guide? The
     server can read a local `.markdownlint-cli2.jsonc` configuration file,
@@ -89,11 +89,11 @@ With the prerequisites in place, install the server with a single `pipx`
 command:
 
 ```bash
-pipx install git+https://github.com/en-ver/markdownlint-mcp.git
+pipx install --pip-args="--no-cache-dir --force-reinstall" git+https://github.com/en-ver/md-lint-mcp.git
 ```
 
 This command automatically creates a virtual environment for the server,
-installs it, and makes the `markdownlint-mcp-server` command available
+installs it, and makes the `md-lint-mcp-server` command available
 globally in your system's PATH.
 
 #### Verify the Installation
@@ -102,11 +102,11 @@ After the installation is complete, you can verify that the server is
 accessible by running:
 
 ```bash
-markdownlint-mcp-server --version
+md-lint-mcp-server --version
 ```
 
 You should see the version number printed to the console (e.g.,
-`markdownlint-mcp-server 0.1.0`). This confirms that the server is correctly
+`md-lint-mcp-server 0.1.0`). This confirms that the server is correctly
 installed and ready to be used by your MCP client.
 
 ## Usage
@@ -117,13 +117,13 @@ client to use it.
 ### Gemini CLI Configuration
 
 Add the following configuration to your Gemini settings. This tells the CLI how
-to launch the globally available `markdownlint-mcp-server`.
+to launch the globally available `md-lint-mcp-server`.
 
 ```json
 {
   "mcp_servers": {
-    "markdownlint": {
-      "command": "markdownlint-mcp-server"
+    "md-lint": {
+      "command": "md-lint-mcp-server"
     }
   }
 }
@@ -147,7 +147,7 @@ You can use Gemini's memory feature to give the agent a standing instruction
 to lint your files. Run the following command in your terminal:
 
 ```bash
-gemini-cli memory --save "Lint .md files with `markdownlint.lint` after changes."
+gemini-cli memory --save "Lint .md files with \`md-lint.lint\` after changes."
 ```
 
 With this memory, the Gemini agent will proactively lint your files whenever
@@ -217,7 +217,7 @@ packages installed by `pipx` and `npm`.
 1. **Uninstall the MCP Server**:
 
     ```bash
-    pipx uninstall markdownlint-mcp
+    pipx uninstall md-lint-mcp
     ```
 
 2. **Uninstall the Linter**:

@@ -1,7 +1,7 @@
-# Developer Guide: MarkdownLint MCP Server
+# Developer Guide: MD Lint MCP Server
 
 This document provides developers with a deep dive into the architecture,
-implementation, and setup of the MarkdownLint MCP Server.
+implementation, and setup of the MD Lint MCP Server.
 
 ## Project Goal
 
@@ -35,7 +35,7 @@ layout for a Python library.
 ├── scripts/
 │   └── setup.sh            # User-friendly setup script
 ├── src/
-│   └── markdownlint_mcp/
+│   └── md_lint_mcp/
 │       ├── __init__.py
 │       └── main.py         # Core application logic
 └── .venv/                    # Virtual environment managed by uv
@@ -76,7 +76,7 @@ This script will:
 
 This file is the heart of the project's configuration.
 
-* **`[project]`**: Defines the package name (`markdownlint-mcp`), version,
+* **`[project]`**: Defines the package name (`md-lint-mcp`), version,
     description, and Python dependencies (`fastmcp`).
 * **`[project.scripts]`**: This creates a command-line entry point.
 
@@ -85,14 +85,14 @@ This file is the heart of the project's configuration.
 
     ```toml
     [project.scripts]
-    markdownlint-mcp-server = "markdownlint_mcp.main:run"
+    md-lint-mcp-server = "md_lint_mcp.main:run"
     ```
 
     When the package is installed, this creates a script named
-    `markdownlint-mcp-server` that, when executed, calls the `run()` function
-    in `src/markdownlint_mcp/main.py`.
+    `md-lint-mcp-server` that, when executed, calls the `run()` function
+    in `src/md_lint_mcp/main.py`.
 
-### `src/markdownlint_mcp/main.py`
+### `src/md_lint_mcp/main.py`
 
 This file contains the core logic for the MCP server.
 
@@ -120,7 +120,7 @@ This file contains the core logic for the MCP server.
         mcp.run()
     ```
 
-    This function is called by the `markdownlint-mcp-server` script. It starts
+    This function is called by the `md-lint-mcp-server` script. It starts
     the server using `fast-mcp`'s default standard I/O (stdio) transport, which
     is ideal for communication with a parent process like the Gemini CLI.
 
@@ -132,8 +132,8 @@ globally installed server via `pipx` is simple:
 ```json
 {
   "mcp_servers": {
-    "markdownlint": {
-      "command": "markdownlint-mcp-server"
+    "md-lint": {
+      "command": "md-lint-mcp-server"
     }
   }
 }
@@ -145,13 +145,13 @@ from the source code using `uv`:
 ```json
 {
   "mcp_servers": {
-    "markdownlint": {
+    "md-lint": {
       "command": "uv",
       "args": [
         "run",
-        "markdownlint-mcp-server"
+        "md-lint-mcp-server"
       ],
-      "working_directory": "/path/to/your/markdownlint-mcp/project"
+      "working_directory": "/path/to/your/md-lint-mcp/project"
     }
   }
 }
@@ -159,12 +159,12 @@ from the source code using `uv`:
 
 Here's the sequence of events for the local development setup:
 
-1. The agent calls a tool from the `markdownlint` server.
-2. The Gemini CLI sees the `mcp_servers` configuration for `markdownlint`.
-3. It executes `uv run markdownlint-mcp-server` in the specified project
+1. The agent calls a tool from the `md-lint` server.
+2. The Gemini CLI sees the `mcp_servers` configuration for `md-lint`.
+3. It executes `uv run md-lint-mcp-server` in the specified project
     directory.
 4. `uv` activates the project's virtual environment and runs the
-    `markdownlint-mcp-server` script.
+    `md-lint-mcp-server` script.
 5. The script calls the `run()` function in `main.py`, starting the server.
 6. The server communicates with the CLI over stdio to execute the tool and
     return the result.
@@ -177,5 +177,5 @@ Here's the sequence of events for the local development setup:
 > starts the server on `localhost:8000` for easier debugging.
 
 ```bash
-python -m src.markdownlint_mcp.main
+python -m src.md_lint_mcp.main
 ```
