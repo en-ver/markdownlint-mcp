@@ -27,8 +27,10 @@ async def lint(file_path: str) -> str:
     inline directives to ignore them.
 
     Args:
-        file_path: The absolute path to the Markdown file to lint. File URLs
-            (e.g., 'file:///...') are not supported.
+        file_path: The path to the Markdown file to lint. This MUST be an
+            absolute path, as relative paths are not supported.
+            - Linux/macOS example: '/home/user/project/file.md'
+            - Windows example: 'C:\\Users\\user\\project\\file.md'
 
     Returns:
         A string indicating either that no violations were found or a
