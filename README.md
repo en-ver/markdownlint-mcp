@@ -76,13 +76,13 @@ via `pipx`.
     npm install -g markdownlint-cli2
     ```
 
-    > [!NOTE]
-    > Depending on how you installed Node.js, you may need to use `sudo` to run
-    > `npm install -g`. To avoid this, we recommend using a Node Version
-    > Manager ([nvm](https://github.com/nvm-sh/nvm)) to install Node.js and
-    > npm. If you installed Node.js via a system package manager like `apt` or
-    > `brew`, you are not required to use `nvm`, but you may need to prefix the
-    > `npm` command with `sudo`.
+> [!NOTE]
+> Depending on how you installed Node.js, you may need to use `sudo` to run
+> `npm install -g`. To avoid this, we recommend using a Node Version
+> Manager ([nvm](https://github.com/nvm-sh/nvm)) to install Node.js and
+> npm. If you installed Node.js via a system package manager like `apt` or
+> `brew`, you are not required to use `nvm`, but you may need to prefix the
+> `npm` command with `sudo`.
 
 ### Install the MCP Server
 
