@@ -176,7 +176,7 @@ using different style guides, and more.
 > We recommend exploring the schema to see all the ways you can customize the
 > linter to match your needs.
 >
-> [**View the official `.markdownlint.jsonc` schema**](https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.jsonc)**
+> [View the official .markdownlint.jsonc schema](https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.jsonc)
 
 ## Uninstall
 
