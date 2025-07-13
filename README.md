@@ -13,9 +13,10 @@ entire linting process.
 
 ### Why You'll Love It
 
-* **Effortless Auto-Fixing**: Automatically corrects most formatting errors
-    the moment you create or modify a Markdown file. It handles everything from
-    extra spaces to inconsistent list styles, so you don't have to.
+* **Effortless Auto-Fixing**: When triggered, the `lint` tool automatically
+    corrects most formatting errors in your Markdown files. It handles
+    everything from extra spaces to inconsistent list styles, so you don't have
+    to.
 * **Focus on What Matters**: For complex issues that require a human touch
     (like a heading that needs rephrasing), the server pinpoints the exact
     problem. This lets you focus on creating great content, not on fighting
@@ -36,12 +37,10 @@ This is the primary tool for linting your Markdown files. It automatically
 corrects common formatting issues and reports any violations that may require
 manual changes.
 
-When violations are found, the tool returns a mandatory directive to the agent,
-instructing it to fix them. If the agent determines that a rule should be
-ignored for a specific line, it must first ask for your confirmation. Once you
-agree, it will use the `get_inline_directives` resource to learn how to disable
-the rule and apply the change. This ensures that you always have the final say
-on how your files are formatted.
+For violations that require manual changes, the agent can fix them or use
+inline directives to ignore them. To learn how to use inline directives, the
+agent can use the `get_inline_directives` resource. This ensures that you
+always have the final say on how your files are formatted.
 
 ### `get_inline_directives()`
 
@@ -135,6 +134,37 @@ to launch the globally available `markdownlint-mcp-server`.
 
 This configuration is much simpler because `pipx` handles the complexity of
 environments and paths. The `command` is now just the name of the script.
+
+## Automatic Usage
+
+The `lint` tool is designed for on-demand use by an AI agent. To create a
+fully automated workflow where your Markdown files are linted every time you
+make a change, you need to instruct your agent to call the `lint` tool
+automatically.
+
+How you do this depends on the client you are using.
+
+### For Gemini CLI
+
+You can use Gemini's memory feature to give the agent a standing instruction
+to lint your files. Run the following command in your terminal:
+
+```bash
+gemini-cli memory --save "Lint .md files with `markdownlint.lint` after changes."
+```
+
+With this memory, the Gemini agent will proactively lint your files whenever
+you work with them in the project.
+
+### For Other IDEs
+
+In IDEs like VS Code, Cursor, or others, you can often define custom tasks or
+rules that are triggered by events like saving a file. To set up automatic
+linting, you would create a rule that calls the `lint` tool for Markdown
+files.
+
+Please consult the official documentation for your specific editor for the
+correct syntax and approach to defining custom rules or tasks.
 
 ## Customization
 

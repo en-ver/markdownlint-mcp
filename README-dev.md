@@ -97,7 +97,7 @@ This file is the heart of the project's configuration.
 This file contains the core logic for the MCP server.
 
 * **MCP Instance**: A `FastMCP` instance is created to define the server, its
-    description (which includes a mandatory agent directive), and its tool.
+    description, and its tools.
 * **Tool**:
   * `lint`: The primary and only tool. It uses
         `asyncio.create_subprocess_shell` to run `markdownlint-cli2` commands.

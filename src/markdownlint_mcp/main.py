@@ -10,7 +10,7 @@ from fastmcp import FastMCP
 
 mcp = FastMCP(
     name="MarkdownLint MCP",
-    instructions="This is a Markdown linting MCP server. It is MANDATORY to use the 'lint' tool every time you create or modify a Markdown file ('.md', '.markdown'). Failure to do so will result in incorrect formatting.",
+    instructions="This is a Markdown linting MCP server. You can use the 'lint' tool to check for and fix formatting issues in Markdown files ('.md', '.markdown').",
 )
 
 
@@ -18,10 +18,13 @@ mcp = FastMCP(
 @mcp.tool
 async def lint(file_path: str) -> str:
     """
-    Checks Markdown files for rule violations.
+    You can use this tool to validate if a Markdown file has formatting rule violations.
 
-    MANDATORY: You MUST use this tool every time you edit a Markdown-formatted file
-    to check for violations. This is not optional.
+    It automatically fixes any violations that can be addressed automatically and
+    returns a list of violations that require manual intervention.
+
+    If the user wants, you can manually fix the remaining violations or use
+    inline directives to ignore them.
 
     Args:
         file_path: The absolute or relative path to the Markdown file to lint.
@@ -70,10 +73,9 @@ async def lint(file_path: str) -> str:
         return f"""The file has the following violations:
 {remaining_errors}
 
-MANDATORY DIRECTIVE: You MUST address each of the violations listed above.
+You can address the violations listed above. After you have addressed the violations, please run `lint` again to confirm the file is clean.
 
-NOTE:
-In some cases, you may determine that a rule should be ignored for a specific line. If so, you MUST first propose the change to the user and get their confirmation. If the user agrees, you should then use the 'get_inline_directives' resource to learn how to disable the rule and apply the change.
+NOTE: In some cases, you may determine that a rule should be ignored for a specific line. If so, you can first propose the change to the user and get their confirmation. If the user agrees, you can then use the 'get_inline_directives' resource to learn how to disable the rule and apply the change.
 """
 
 
@@ -81,11 +83,12 @@ In some cases, you may determine that a rule should be ignored for a specific li
 @mcp.resource("config://markdownlint/inline-directives")
 async def get_inline_directives() -> str:
     """
-    Returns information on how to use inline comments to control
-    linting rules directly within a Markdown file.
+    You can use this resource to get information about how to use inline comments
+    (directives) to control linting rules directly within a Markdown file.
 
-    You MUST use this tool every time you are going to add inline
-    directives to a Markdown file.
+    These directives allow you to disable or enable specific rules for certain
+    lines or sections of the file, which is useful for handling exceptions to
+    the linting rules.
 
     Returns:
         A string containing the documentation for inline directives, or an
@@ -133,7 +136,7 @@ def run():
 
     if "--help" in sys.argv or "-h" in sys.argv:
         print(
-            '''Usage: markdownlint-mcp-server [options]
+            """Usage: markdownlint-mcp-server [options]
 
 An intelligent "Markdown Linter" as a set of tools for an AI agent.
 
@@ -141,7 +144,7 @@ Options:
   --version             Show version number and exit.
   -h, --help            Show this help message and exit.
   --no-banner           Start the server without the FastMCP banner.
-'''
+"""
         )
         return
 
@@ -152,4 +155,5 @@ Options:
 # This allows you to run the server directly with `python -m src.markdownlint_mcp.main` for testing
 if __name__ == "__main__":
     print("Starting MarkdownLint MCP Server for local testing...")
-    mcp.run()
+    print("Navigate to http://localhost:8000/tools/lint in your browser to test.")
+    mcp.run(transport="http", host="127.0.0.1", port=8000)
