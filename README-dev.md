@@ -149,8 +149,7 @@ from the source code using `uv`:
       "command": "uv",
       "args": [
         "run",
-        "markdownlint-mcp-server",
-        "--no-banner"
+        "markdownlint-mcp-server"
       ],
       "working_directory": "/path/to/your/markdownlint-mcp/project"
     }

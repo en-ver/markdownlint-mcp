@@ -123,10 +123,7 @@ to launch the globally available `markdownlint-mcp-server`.
 {
   "mcp_servers": {
     "markdownlint": {
-      "command": "markdownlint-mcp-server",
-      "args": [
-        "--no-banner"
-      ]
+      "command": "markdownlint-mcp-server"
     }
   }
 }

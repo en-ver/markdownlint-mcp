@@ -143,17 +143,17 @@ An intelligent "Markdown Linter" as a set of tools for an AI agent.
 Options:
   --version             Show version number and exit.
   -h, --help            Show this help message and exit.
-  --no-banner           Start the server without the FastMCP banner.
+  --banner              Start the server with the FastMCP banner (hidden by default).
 """
         )
         return
 
     # This runs the server using the default transport (stdio)
-    mcp.run()
+    mcp.run(show_banner=False)
 
 
 # This allows you to run the server directly with `python -m src.markdownlint_mcp.main` for testing
 if __name__ == "__main__":
     print("Starting MarkdownLint MCP Server for local testing...")
     print("Navigate to http://localhost:8000/tools/lint in your browser to test.")
-    mcp.run(transport="http", host="127.0.0.1", port=8000)
+    mcp.run(transport="http", host="127.0.0.1", port=8000, show_banner=False)
