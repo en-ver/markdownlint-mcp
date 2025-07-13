@@ -3,6 +3,8 @@
 import asyncio
 from pathlib import Path
 import httpx
+import sys
+from importlib import metadata
 
 from fastmcp import FastMCP
 
@@ -121,6 +123,28 @@ async def get_inline_directives() -> str:
 # === SERVER ENTRY POINT ===
 def run():
     """This is the function the MCP client will call to start our server."""
+    if "--version" in sys.argv:
+        try:
+            version = metadata.version("markdownlint-mcp")
+        except metadata.PackageNotFoundError:
+            version = "0.1.0"  # Fallback for local dev
+        print(f"markdownlint-mcp-server {version}")
+        return
+
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print(
+            '''Usage: markdownlint-mcp-server [options]
+
+An intelligent "Markdown Linter" as a set of tools for an AI agent.
+
+Options:
+  --version             Show version number and exit.
+  -h, --help            Show this help message and exit.
+  --no-banner           Start the server without the FastMCP banner.
+'''
+        )
+        return
+
     # This runs the server using the default transport (stdio)
     mcp.run()
 
