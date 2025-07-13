@@ -103,12 +103,12 @@ After the installation is complete, you can verify that the server is
 accessible by running:
 
 ```bash
-markdownlint-mcp-server --help
+markdownlint-mcp-server --version
 ```
 
-You should see a help message outlining the available commands and options.
-This confirms that the server is correctly installed and ready to be used by
-your MCP client.
+You should see the version number printed to the console (e.g.,
+`markdownlint-mcp-server 0.1.0`). This confirms that the server is correctly
+installed and ready to be used by your MCP client.
 
 ## Usage
 
