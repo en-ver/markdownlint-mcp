@@ -8,7 +8,7 @@ from fastmcp import FastMCP
 
 mcp = FastMCP(
     name="MarkdownLint MCP",
-    instructions="This is a Markdown linting MCP server. You MUST use the 'lint' tool every time you create or modify a Markdown file ('.md', '.markdown').",
+    instructions="This is a Markdown linting MCP server. It is MANDATORY to use the 'lint' tool every time you create or modify a Markdown file ('.md', '.markdown'). Failure to do so will result in incorrect formatting.",
 )
 
 
@@ -18,8 +18,8 @@ async def lint(file_path: str) -> str:
     """
     Checks Markdown files for rule violations.
 
-    You MUST use this tool every time you edit a Markdown-formatted file to check for
-    violations.
+    MANDATORY: You MUST use this tool every time you edit a Markdown-formatted file
+    to check for violations. This is not optional.
 
     Args:
         file_path: The absolute or relative path to the Markdown file to lint.

@@ -90,7 +90,7 @@ With the prerequisites in place, install the server with a single `pipx`
 command:
 
 ```bash
-pipx install https://github.com/en-ver/markdownlint-mcp
+pipx install git+https://github.com/en-ver/markdownlint-mcp.git
 ```
 
 This command automatically creates a virtual environment for the server,
