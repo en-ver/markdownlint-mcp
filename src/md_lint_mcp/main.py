@@ -44,7 +44,7 @@ async def lint(file_path: str) -> str:
 
     # First, run with --fix to autocorrect any violations.
     # We suppress the output of this command as it's not needed.
-    fix_command = f'markdownlint-cli2 --fix "{path.resolve()}"'
+    fix_command = f'markdownlint --fix "{path.resolve()}"'
     fix_process = await asyncio.create_subprocess_shell(
         fix_command,
         stdout=asyncio.subprocess.DEVNULL,
@@ -53,7 +53,7 @@ async def lint(file_path: str) -> str:
     await fix_process.communicate()
 
     # Second, run without --fix to get a clean list of remaining errors.
-    lint_command = f'markdownlint-cli2 "{path.resolve()}"'
+    lint_command = f'markdownlint "{path.resolve()}"'
     lint_process = await asyncio.create_subprocess_shell(
         lint_command,
         stdout=asyncio.subprocess.PIPE,
@@ -114,16 +114,24 @@ async def get_inline_directives() -> str:
         # Find the next H2 heading to determine the end of the section.
         end_index = content.find("\n## ", start_index + len(start_phrase))
 
+        documentation_section = ""
         if end_index == -1:
             # If no subsequent H2 heading is found, assume it's the last section.
-            return content[start_index:].strip()
+            documentation_section = content[start_index:].strip()
         else:
-            return content[start_index:end_index].strip()
+            documentation_section = content[start_index:end_index].strip()
+
+        recommendation = """
+
+> [!NOTE]
+> When using inline directives, add them on a separate line before or after the content you want to ignore. Do not place directives inside the text of a paragraph, as this can cause them to be rendered as part of the content."""
+        return documentation_section + recommendation
 
     except httpx.HTTPStatusError as e:
         return f"Error fetching documentation: {e.response.status_code} {e.response.reason_phrase}"
     except Exception as e:
         return f"An unexpected error occurred: {e}"
+
 
 
 # === SERVER ENTRY POINT ===

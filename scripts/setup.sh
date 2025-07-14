@@ -14,7 +14,7 @@ echo "--- Installing Python dependencies from pyproject.toml ---"
 uv pip install -e .
 
 echo ""
-echo "--- Installing Node.js dependency: markdownlint-cli2 ---"
+echo "--- Installing Node.js dependency: markdownlint-cli ---"
 
 # 1. Source nvm if it exists, to ensure we use the nvm-managed node and npm.
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
@@ -29,12 +29,12 @@ if ! command -v npm &> /dev/null; then
 fi
 
 # 3. Install the linter locally.
-echo "Attempting to install markdownlint-cli2 locally..."
-npm install markdownlint-cli2
+echo "Attempting to install markdownlint-cli locally..."
+npm install markdownlint-cli
 
 echo ""
 echo "--- Development Setup Complete! ---"
 echo "A .venv virtual environment has been created and all dependencies are installed."
 echo "You can now run the server for local testing with: uv run python -m src.markdownlint_mcp.main"
 echo "To use the locally installed linter, you may need to run commands like:"
-echo "npx markdownlint-cli2 ..."
+echo "npx markdownlint-cli ..."

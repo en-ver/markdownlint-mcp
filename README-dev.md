@@ -20,9 +20,9 @@ packaging standards.
     scripts in a virtual environment.
 * **FastMCP**: The framework used to create the MCP server and define the
     tools.
-* **markdownlint-cli2**: The underlying Node.js-based tool that performs the
+* **markdownlint-cli**: The underlying Node.js-based tool that performs the
     actual Markdown linting and fixing.
-* **npm**: Used to install `markdownlint-cli2`.
+* **npm**: Used to install `markdownlint-cli`.
 
 ## Project Structure
 
@@ -68,7 +68,7 @@ This script will:
 1. Use `uv venv` to create a Python virtual environment.
 2. Use `uv pip install -e .` to install the project in "editable" mode, along
     with its Python dependencies (`fastmcp`).
-3. Use `npm` to install `markdownlint-cli2` locally.
+3. Use `npm` to install `markdownlint-cli` locally.
 
 ## Implementation Deep Dive
 
@@ -100,7 +100,7 @@ This file contains the core logic for the MCP server.
     description, and its tools.
 * **Tool**:
   * `lint`: The primary and only tool. It uses
-        `asyncio.create_subprocess_shell` to run `markdownlint-cli2` commands.
+        `asyncio.create_subprocess_shell` to run `markdownlint-cli` commands.
         It first runs with the `--fix` flag to automatically correct issues,
         then runs again without it to report any remaining, non-fixable errors.
 * **Resource**:

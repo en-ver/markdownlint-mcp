@@ -1,7 +1,7 @@
 [project]
 name = "md-lint-mcp"
 version = "0.1.0"
-description = "A comprehensive FastMCP server to lint and fix markdown violations using markdownlint-cli2."
+description = "A comprehensive FastMCP server to lint and fix markdown violations using markdownlint-cli."
 readme = "README.md"
 authors = [
     { name = "en-ver" }

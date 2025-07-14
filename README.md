@@ -24,7 +24,7 @@ entire linting process.
 * **On-Demand and Lightweight**: The server only runs when needed, so it won
     bog down your system. It’s there when you need it and gone when you don’t.
 * **Customizable for Your Projects**: Do you have a specific style guide? The
-    server can read a local `.markdownlint-cli2.jsonc` configuration file,
+    server can read a local `.markdownlint-cli.jsonc` configuration file,
     allowing you to tailor its rules to fit your project's unique needs.
 
 ## Available Tools
@@ -65,14 +65,14 @@ via `pipx`.
     python3 -m pipx ensurepath
     ```
 
-3. **Node.js and npm**: The underlying `markdownlint-cli2` tool requires a
+3. **Node.js and npm**: The underlying `markdownlint-cli` tool requires a
     Node.js environment. Install it via your system's package manager (e.g.,
     `apt`, `brew`, `yum`).
-4. **markdownlint-cli2**: Once Node.js is installed, install the linter
+4. **markdownlint-cli**: Once Node.js is installed, install the linter
     globally:
 
     ```bash
-    npm install -g markdownlint-cli2
+    npm install -g markdownlint-cli
     ```
 
 > [!NOTE]
@@ -80,8 +80,8 @@ via `pipx`.
 > `npm install -g`. To avoid this, we recommend using a Node Version
 > Manager ([nvm](https://github.com/nvm-sh/nvm)) to install Node.js and
 > npm. If you installed Node.js via a system package manager like `apt` or
-> `brew`, you are not required to use `nvm`, but you may need to prefix the
-> `npm` command with `sudo`.
+> `brew`, you are not required to use `nvm`, but you may need to prefix
+> the `npm` command with `sudo`.
 
 ### Install the MCP Server
 
@@ -93,8 +93,8 @@ pipx install --pip-args="--no-cache-dir --force-reinstall" git+https://github.co
 ```
 
 This command automatically creates a virtual environment for the server,
-installs it, and makes the `md-lint-mcp-server` command available
-globally in your system's PATH.
+installs it, and makes the `md-lint-mcp-server` command available globally in
+your system's PATH.
 
 #### Verify the Installation
 
@@ -147,7 +147,7 @@ You can use Gemini's memory feature to give the agent a standing instruction
 to lint your files. Run the following command in your terminal:
 
 ```bash
-gemini-cli memory --save "Lint .md files with \`md-lint.lint\` after changes."
+gemini-cli memory --save "Lint .md files with `md-lint.lint` after changes."
 ```
 
 With this memory, the Gemini agent will proactively lint your files whenever
@@ -166,7 +166,7 @@ correct syntax and approach to defining custom rules or tasks.
 ## Customization
 
 You can tailor the linter's behavior to fit your project's specific style guide
-by creating a `.markdownlint-cli2.jsonc` file in the root of your project
+by creating a `.markdownlint-cli.jsonc` file in the root of your project
 directory. When the `lint` tool is run, it will automatically detect and apply
 the rules defined in this file.
 
@@ -194,7 +194,7 @@ The full set of configurable rules and options can be found in the official
 `markdownlint` JSON schema. This document is the definitive source for all
 available settings.
 
-Since this project installs `markdownlint-cli2` directly on your machine, you
+Since this project installs `markdownlint-cli` directly on your machine, you
 are free to use all of its capabilities. We highly recommend consulting the
 official documentation to explore advanced features like creating custom rules,
 using different style guides, and more.
@@ -202,7 +202,6 @@ using different style guides, and more.
 > [!TIP]
 > We recommend exploring the schema to see all the ways you can customize the
 > linter to match your needs.
->
 > [View the official .markdownlint.jsonc schema](https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.jsonc)
 
 ## Uninstall
@@ -223,7 +222,7 @@ packages installed by `pipx` and `npm`.
 2. **Uninstall the Linter**:
 
     ```bash
-    npm uninstall -g markdownlint-cli2
+    npm uninstall -g markdownlint-cli
     ```
 
 ## For Developers
