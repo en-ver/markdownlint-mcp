@@ -1,181 +1,87 @@
-# Developer Guide: MD Lint MCP Server
+# Developer Guide: AutoLint MCP Server
 
-This document provides developers with a deep dive into the architecture,
-implementation, and setup of the MD Lint MCP Server.
+This document provides developers with a deep dive into the architecture, implementation, and setup of the AutoLint MCP Server.
 
 ## Project Goal
 
-The goal of this project is to build a Python package that provides a "Markdown
-Linter" as a set of tools for an AI agent. The server is designed to be
-launched on-demand by an MCP client (like Gemini CLI) when the agent needs to
-check or fix a Markdown file, rather than running continuously.
-
-This project is built using `uv` to automate setup and adhere to modern Python
-packaging standards.
+The goal of this project is to build a background service that automatically lints Python and Markdown files when they are created or modified. It provides immediate feedback to a connected AI agent (like the Gemini CLI) by programmatically calling a tool to report the results. This allows the agent to address linting and formatting issues autonomously without needing to be prompted.
 
 ## Core Technologies
 
-* **Python 3.11+**: The required Python version.
-* **uv**: For project initialization, dependency management, and running
-    scripts in a virtual environment.
-* **FastMCP**: The framework used to create the MCP server and define the
-    tools.
-* **markdownlint-cli**: The underlying Node.js-based tool that performs the
-    actual Markdown linting and fixing.
-* **npm**: Used to install `markdownlint-cli`.
+*   **Python 3.11+**: The required Python version.
+*   **uv**: For project initialization, dependency management, and running scripts.
+*   **FastMCP**: The framework used to create the MCP server and define its tools.
+*   **watchdog**: A library for monitoring file system events (creation, modification).
+*   **ruff**: For linting and formatting Python files.
+*   **markdownlint-cli**: For linting and fixing Markdown files.
 
-## Project Structure
+## Architecture Overview
 
-The project was initialized using `uv init --lib` and follows the standard `src`
-layout for a Python library.
+The server runs as a persistent background process that watches a specified directory. It does not operate on an on-demand basis.
 
-```text
-.
-├── pyproject.toml          # Project metadata, dependencies, and scripts
-├── scripts/
-│   └── setup.sh            # User-friendly setup script
-├── src/
-│   └── md_lint_mcp/
-│       ├── __init__.py
-│       └── main.py         # Core application logic
-└── .venv/                    # Virtual environment managed by uv
-```
+1.  **Initialization**: The `main.py` script serves as the entry point. It starts the FastMCP server and, in a separate background thread, the file system watcher.
+2.  **File Watching**: The `watcher.py` module uses the `watchdog` library to monitor for file creation and modification events. To prevent excessive linting on rapid saves, events are "debounced" using a 1-second timer.
+3.  **Linter Execution**: When a change is detected on a `.py` or `.md` file, the `linters.py` module is invoked. It runs the appropriate command-line linter (`ruff` or `markdownlint`) using `subprocess.run()`.
+4.  **Feedback Loop**: After the linter runs, the result (any remaining, un-fixable issues) is sent back to the Gemini agent's context. This is achieved by programmatically calling the server's own `report_linting_issues` tool.
 
-## Development Setup
+### Key Concept: In-Memory Client
 
-This setup is intended for developers who are actively working on the server's
-source code.
+A significant technical challenge is the requirement for the server to call its own tool. A naive approach would be to run the server in HTTP mode and have it make an HTTP request to itself. However, this introduces network overhead and, more importantly, creates a race condition where the file watcher might try to call the tool before the web server is fully initialized.
 
-> [!NOTE]
-> For end-users, the recommended installation method is `pipx` as
-> described in `README.md`.
+The solution is to use an **in-memory client**.
 
-The `setup.sh` script handles all the necessary steps for a local development
-environment.
+1.  The `main.py` entry point creates a single `FastMCP` server instance.
+2.  This `server` instance is passed directly to the watcher thread, and subsequently to the linter functions.
+3.  When `linters.py` needs to report results, it creates a `fastmcp.Client` by passing the `server` object directly to its constructor: `Client(server)`.
+4.  FastMCP automatically detects this and creates an efficient, in-memory transport that communicates directly with the server object inside the same process, completely bypassing the network stack.
 
-1. **Clone the repository.**
-2. **Install `uv`**: This project uses `uv` for environment and package
-    management.
-3. **Run the setup script**:
+This approach is faster, more reliable, and eliminates the race condition. It also means the internal feedback loop works regardless of which external transport (`stdio` or `http`) the server is configured to use.
 
-    ```bash
-    chmod +x scripts/setup.sh
-    ./scripts/setup.sh
-    ```
+## Configuration and Setup
 
-This script will:
+The server is configured via the `mcp_settings.json` file used by the Gemini CLI. The two primary modes of operation are `stdio` and `http`.
 
-1. Use `uv venv` to create a Python virtual environment.
-2. Use `uv pip install -e .` to install the project in "editable" mode, along
-    with its Python dependencies (`fastmcp`).
-3. Use `npm` to install `markdownlint-cli` locally.
+### STDIO Mode (Default and Recommended)
 
-## Implementation Deep Dive
+In this mode, the server communicates with the Gemini CLI over standard input/output. It does not open any network ports, which is ideal for local development as it is secure and avoids port conflicts.
 
-### `pyproject.toml`
-
-This file is the heart of the project's configuration.
-
-* **`[project]`**: Defines the package name (`md-lint-mcp`), version,
-    description, and Python dependencies (`fastmcp`).
-* **`[project.scripts]`**: This creates a command-line entry point.
-
-  > [!IMPORTANT]
-  > This is a crucial section that makes the on-demand server possible.
-
-    ```toml
-    [project.scripts]
-    md-lint-mcp-server = "md_lint_mcp.main:run"
-    ```
-
-    When the package is installed, this creates a script named
-    `md-lint-mcp-server` that, when executed, calls the `run()` function
-    in `src/md_lint_mcp/main.py`.
-
-### `src/md_lint_mcp/main.py`
-
-This file contains the core logic for the MCP server.
-
-* **MCP Instance**: A `FastMCP` instance is created to define the server, its
-    description, and its tools.
-* **Tool**:
-  * `lint`: The primary and only tool. It uses
-        `asyncio.create_subprocess_shell` to run `markdownlint-cli` commands.
-        It first runs with the `--fix` flag to automatically correct issues,
-        then runs again without it to report any remaining, non-fixable errors.
-* **Resource**:
-  * `get_inline_directives`: A resource exposed via
-        `config://markdownlint/inline-directives`. It fetches the `README.md`
-        from the official `markdownlint` GitHub repository and extracts the
-        "Configuration" section. This provides the agent with up-to-date
-        information on how to use inline comments (e.g.,
-        `<!-- markdownlint-disable MD013 -->`) to control rules directly
-        within a file.
-* **Server Entry Point (`run` function)**:
-
-    ```python
-    def run():
-        """This is the function the MCP client will call to start our server."""
-        # This runs the server using the default transport (stdio)
-        mcp.run()
-    ```
-
-    This function is called by the `md-lint-mcp-server` script. It starts
-    the server using `fast-mcp`'s default standard I/O (stdio) transport, which
-    is ideal for communication with a parent process like the Gemini CLI.
-
-### On-Demand Server Launch
-
-The server is launched by the MCP client. The configuration for Gemini CLI for a
-globally installed server via `pipx` is simple:
+**`mcp_settings.json` Example:**
 
 ```json
 {
-  "mcp_servers": {
-    "md-lint": {
-      "command": "md-lint-mcp-server"
+  "servers": [
+    {
+      "name": "AutoLint",
+      "run": "uv run -m src.md_lint_mcp.main",
+      "transport": "stdio",
+      "cwd": "/path/to/your/monitored/project"
     }
-  }
+  ]
 }
 ```
 
-For local development, you can configure the client to run the server directly
-from the source code using `uv`:
+### HTTP Mode (Optional)
+
+This mode exposes the server on a network port. It is not required for the core functionality but can be useful for specific use cases.
+
+*   **Remote Monitoring**: You could run the server on a remote machine and have your local Gemini CLI connect to it.
+*   **Debugging**: It allows you to inspect the server's MCP endpoint (e.g., `http://localhost:8080/mcp/`) with tools like `curl`.
+
+**`mcp_settings.json` Example:**
 
 ```json
 {
-  "mcp_servers": {
-    "md-lint": {
-      "command": "uv",
-      "args": [
-        "run",
-        "md-lint-mcp-server"
-      ],
-      "working_directory": "/path/to/your/md-lint-mcp/project"
+  "servers": [
+    {
+      "name": "AutoLint",
+      "run": "uv run -m src.md_lint_mcp.main",
+      "transport": "http",
+      "host": "127.0.0.1",
+      "port": 8080,
+      "cwd": "/path/to/your/monitored/project"
     }
-  }
+  ]
 }
 ```
 
-Here's the sequence of events for the local development setup:
-
-1. The agent calls a tool from the `md-lint` server.
-2. The Gemini CLI sees the `mcp_servers` configuration for `md-lint`.
-3. It executes `uv run md-lint-mcp-server` in the specified project
-    directory.
-4. `uv` activates the project's virtual environment and runs the
-    `md-lint-mcp-server` script.
-5. The script calls the `run()` function in `main.py`, starting the server.
-6. The server communicates with the CLI over stdio to execute the tool and
-    return the result.
-7. Once the interaction is complete, the server process exits.
-
-## Local Testing
-
-> [!TIP]
-> To test the server without a client, you can run `main.py` as a script. This
-> starts the server on `localhost:8000` for easier debugging.
-
-```bash
-python -m src.md_lint_mcp.main
-```
+The server code in `main.py` is already configured to handle both modes by reading the `MCP_TRANSPORT`, `MCP_HOST`, and `MCP_PORT` environment variables that the Gemini CLI sets at runtime based on this configuration.

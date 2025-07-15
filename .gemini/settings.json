@@ -1,0 +1,21 @@
+{
+    "mcpServers": {
+        "AutoLint": {
+          "command": "uv",
+          "args": [
+            "run",
+            "-m",
+            "src.md_lint_mcp.main"
+          ],
+          "transport": "stdio",
+          "cwd": "/home/enver/github/md-lint-mcp"
+        }
+      },    
+    "fileFiltering": {
+        // "enableRecursiveFileSearch": true,
+        "respectGitIgnore": false
+    },
+    "checkpointing": {
+        "enabled": true
+    }
+}

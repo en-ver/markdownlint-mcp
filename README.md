@@ -109,59 +109,55 @@ You should see the version number printed to the console (e.g.,
 `md-lint-mcp-server 0.1.0`). This confirms that the server is correctly
 installed and ready to be used by your MCP client.
 
-## Usage
+## Usage with Gemini CLI
 
-Once the server is installed and verified, you need to configure your MCP
-client to use it.
+To use this server, you must tell the Gemini CLI how to run it for your specific project. This is done by creating a configuration file inside your project directory.
 
-### Gemini CLI Configuration
+### Step 1: Create the Configuration File
 
-Add the following configuration to your Gemini settings. This tells the CLI how
-to launch the globally available `md-lint-mcp-server`.
+1. avigate to the root directory of the project you want to monitor.
+2. reate a new directory named `.gemini`.
+3. nside the `.gemini` directory, create a new file named `mcp_settings.json`.
+
+Your project structure should look like this:
+
+```
+your-project/
+├── .gemini/
+│   └── mcp_settings.json
+└── ... (your other project files)
+```
+
+### Step 2: Add the Configuration
+
+Copy and paste the following JSON into your `mcp_settings.json` file.
+
+> [!IMPORTANT]
+> You **must** replace `"/path/to/your/monitored/project"` with the **absolute path** to your project's root directory.
 
 ```json
 {
-  "mcp_servers": {
-    "md-lint": {
-      "command": "md-lint-mcp-server"
+  "servers": [
+    {
+      "name": "AutoLint",
+      "run": "md-lint-mcp-server",
+      "transport": "stdio",
+      "cwd": "/path/to/your/monitored/project"
     }
-  }
+  ]
 }
 ```
 
-This configuration is much simpler because `pipx` handles the complexity of
-environments and paths. The `command` is now just the name of the script.
+**How to get the absolute path:**
 
-## Automatic Usage
+* inux or macOS, navigate to your project folder in the terminal and run the `pwd` command.
+* On Windows, you can get it from the address bar in File Explorer.
 
-The `lint` tool is designed for on-demand use by an AI agent. To create a
-fully automated workflow where your Markdown files are linted every time you
-make a change, you need to instruct your agent to call the `lint` tool
-automatically.
+### Step 3: Start the Server
 
-How you do this depends on the client you are using.
+The server will now start automatically in the background the first time the Gemini CLI needs to access one of its tools. Because it's a file watcher, it will remain running as long as the Gemini CLI is active in that project.
 
-### For Gemini CLI
-
-You can use Gemini's memory feature to give the agent a standing instruction
-to lint your files. Run the following command in your terminal:
-
-```bash
-gemini-cli memory --save "Lint .md files with `md-lint.lint` after changes."
-```
-
-With this memory, the Gemini agent will proactively lint your files whenever
-you work with them in the project.
-
-### For Other IDEs
-
-In IDEs like VS Code, Cursor, or others, you can often define custom tasks or
-rules that are triggered by events like saving a file. To set up automatic
-linting, you would create a rule that calls the `lint` tool for Markdown
-files.
-
-Please consult the official documentation for your specific editor for the
-correct syntax and approach to defining custom rules or tasks.
+When you create or modify a Python or Markdown file, the `AutoLint` server will automatically format it and report any remaining issues directly into the agent's context, allowing it to fix them for you.
 
 ## Customization
 
