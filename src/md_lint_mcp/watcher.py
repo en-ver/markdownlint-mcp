@@ -1,59 +1,59 @@
-import time
-from watchdog.observers import Observer
+import threading
+from watchdog.observers.polling import PollingObserver as Observer
 from watchdog.events import FileSystemEventHandler
-from threading import Timer
-from .linters import run_linters_for_file
-from .server import server as server_instance  # To get the type hint
+from queue import Queue
 
-debounce_timers = {}
-IGNORE_DIRS = [".venv", ".ruff_cache", ".git", "node_modules", "__pycache__"]
+WATCHED_EXTENSIONS = ('.py', '.md')
 
-
-def trigger_linting(path: str, server: server_instance):
-    """Debounced: Triggering linting for a given path."""
-    print(f"Debounced: Triggering linting for {path}")
-    run_linters_for_file(path, server)
-
-
-class LintingEventHandler(FileSystemEventHandler):
-    def __init__(self, server: server_instance):
-        self.server = server
+class DualCallbackEventHandler(FileSystemEventHandler):
+    """
+    An event handler that manages two separate debounced callbacks: one for
+    immediate linting and one for delayed formatting.
+    """
+    def __init__(self, lint_queue: Queue, format_queue: Queue,
+                 lint_delay: float, format_delay: float):
         super().__init__()
+        self.lint_queue = lint_queue
+        self.format_queue = format_queue
+        self.lint_delay = lint_delay
+        self.format_delay = format_delay
+        self.lint_timer: threading.Timer | None = None
+        self.format_timer: threading.Timer | None = None
 
-    def on_modified(self, event):
-        if event.is_directory:
-            return
+    def dispatch(self, event):
+        """
+        Dispatches events, filtering for relevant file changes and starting
+        both lint and format timers.
+        """
+        if (not event.is_directory and
+            event.event_type == 'modified' and
+            event.src_path.endswith(WATCHED_EXTENSIONS)):
+            
+            if '/.' in event.src_path or '/node_modules/' in event.src_path:
+                 return
 
-        path = event.src_path
-        if any(d in path for d in IGNORE_DIRS):
-            return
+            # Cancel previous timers
+            if self.lint_timer:
+                self.lint_timer.cancel()
+            if self.format_timer:
+                self.format_timer.cancel()
+            
+            # Start new timers for both callbacks
+            self.lint_timer = threading.Timer(self.lint_delay, self.lint_queue.put, args=[event.src_path])
+            self.format_timer = threading.Timer(self.format_delay, self.format_queue.put, args=[event.src_path])
+            
+            self.lint_timer.start()
+            self.format_timer.start()
 
-        if path in debounce_timers:
-            debounce_timers[path].cancel()
-
-        debounce_timers[path] = Timer(1.0, lambda: trigger_linting(path, self.server))
-        debounce_timers[path].start()
-
-    def on_created(self, event):
-        if not event.is_directory:
-            self.on_modified(event)
-
-
-def start_watching(path: str, server: server_instance):
+def start_watcher(directory: str, lint_queue: Queue, format_queue: Queue,
+                  lint_delay: float, format_delay: float):
     """
-    Starts watching a directory for file changes.
-
-    :param path: The path to the directory to watch.
-    :param server: The FastMCP server instance.
+    Initializes and starts a reliable, polling file system watcher with
+    dual callbacks.
     """
-    event_handler = LintingEventHandler(server)
+    event_handler = DualCallbackEventHandler(lint_queue, format_queue, lint_delay, format_delay)
     observer = Observer()
-    observer.schedule(event_handler, path, recursive=True)
+    observer.schedule(event_handler, directory, recursive=True)
+    observer.daemon = True
     observer.start()
-    print(f"Watching for file changes in {path}")
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+    return observer

@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-md-lint-mcp-server = "md_lint_mcp.main:run"
+md-lint-mcp = "md_lint_mcp.main:main"
 
 [build-system]
 requires = ["hatchling"]

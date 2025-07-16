@@ -1,87 +1,99 @@
-# Developer Guide: AutoLint MCP Server
+# Developer Guide: Auto-Lint MCP Server
 
-This document provides developers with a deep dive into the architecture, implementation, and setup of the AutoLint MCP Server.
+This document provides developers with a deep dive into the architecture,
+implementation, and setup of the Auto-Lint MCP Server.
 
 ## Project Goal
 
-The goal of this project is to build a background service that automatically lints Python and Markdown files when they are created or modified. It provides immediate feedback to a connected AI agent (like the Gemini CLI) by programmatically calling a tool to report the results. This allows the agent to address linting and formatting issues autonomously without needing to be prompted.
+The goal of this project is to build a background service that automatically
+formats and lints code when files are modified. It provides a stateful,
+queryable resource (`resource://linting_violations`) that always reflects the
+current set of non-fixable errors in the project, allowing AI agents and other
+tools to programmatically access and act upon the project's code quality
+status.
 
 ## Core Technologies
 
-*   **Python 3.11+**: The required Python version.
-*   **uv**: For project initialization, dependency management, and running scripts.
-*   **FastMCP**: The framework used to create the MCP server and define its tools.
-*   **watchdog**: A library for monitoring file system events (creation, modification).
-*   **ruff**: For linting and formatting Python files.
-*   **markdownlint-cli**: For linting and fixing Markdown files.
+* **Python 3.11+**: The required Python version.
+* **uv**: For project initialization, dependency management, and running
+    scripts.
+* **FastMCP**: The framework used to create the MCP server and expose
+    resources/tools.
+* **watchdog**: A library for monitoring file system events, specifically
+    using the reliable `PollingObserver`.
+* **typer**: For creating a clean and robust command-line interface.
+* **ruff**: For linting and formatting Python files.
+* **markdownlint-cli**: For linting and formatting Markdown files.
 
 ## Architecture Overview
 
-The server runs as a persistent background process that watches a specified directory. It does not operate on an on-demand basis.
+The final implementation is a resilient, multi-threaded application built
+around a **dual producer-consumer** pattern using two separate queues. This
+design provides a highly responsive experience by separating immediate linting
+feedback from less frequent, delayed formatting.
 
-1.  **Initialization**: The `main.py` script serves as the entry point. It starts the FastMCP server and, in a separate background thread, the file system watcher.
-2.  **File Watching**: The `watcher.py` module uses the `watchdog` library to monitor for file creation and modification events. To prevent excessive linting on rapid saves, events are "debounced" using a 1-second timer.
-3.  **Linter Execution**: When a change is detected on a `.py` or `.md` file, the `linters.py` module is invoked. It runs the appropriate command-line linter (`ruff` or `markdownlint`) using `subprocess.run()`.
-4.  **Feedback Loop**: After the linter runs, the result (any remaining, un-fixable issues) is sent back to the Gemini agent's context. This is achieved by programmatically calling the server's own `report_linting_issues` tool.
+1. **Producer (The Watcher):** A single, reliable file system watcher
+    (`PollingObserver`) continuously monitors the project directory. When a
+    relevant file is modified, it starts **two separate timers**:
+    * A short-delay timer for near-instant linting.
+    * A long-delay timer for non-disruptive formatting.
+    When each timer completes, the file path is added to the appropriate queue
+    (`lint_queue` or `format_queue`).
 
-### Key Concept: In-Memory Client
+2. **Consumer 1 (The Linter Worker):** A dedicated background thread for
+    linting. It immediately pulls file paths from the `lint_queue`, executes
+    the appropriate linter (e.g., `ruff check`), and updates the central
+    violation state.
 
-A significant technical challenge is the requirement for the server to call its own tool. A naive approach would be to run the server in HTTP mode and have it make an HTTP request to itself. However, this introduces network overhead and, more importantly, creates a race condition where the file watcher might try to call the tool before the web server is fully initialized.
+3. **Consumer 2 (The Formatter Worker):** A second background thread for
+    formatting. It pulls file paths from the `format_queue` after a significant
+    delay, then runs the code formatter (e.g., `ruff format` or
+    `markdownlint --fix`) on the file.
 
-The solution is to use an **in-memory client**.
+4. **Stateful Server (The `LintingServer` Class):** The core logic is
+    encapsulated in the `LintingServer` class in `server.py`. This class
+    manages all state (the violation cache, locks), the worker threads, and the
+    `FastMCP` instance. This object-oriented approach avoids global state and
+    makes the system more robust and testable.
 
-1.  The `main.py` entry point creates a single `FastMCP` server instance.
-2.  This `server` instance is passed directly to the watcher thread, and subsequently to the linter functions.
-3.  When `linters.py` needs to report results, it creates a `fastmcp.Client` by passing the `server` object directly to its constructor: `Client(server)`.
-4.  FastMCP automatically detects this and creates an efficient, in-memory transport that communicates directly with the server object inside the same process, completely bypassing the network stack.
+## Code Structure
 
-This approach is faster, more reliable, and eliminates the race condition. It also means the internal feedback loop works regardless of which external transport (`stdio` or `http`) the server is configured to use.
+* **`main.py`**: The application entry point. It uses `typer` to parse CLI
+    arguments and then instantiates and starts the `LintingServer`.
+* **`server.py`**: Contains the main `LintingServer` class, which
+    orchestrates all components. It defines the MCP resource and tool, and
+    contains the logic for the linter and formatter worker threads.
+* **`watcher.py`**: Implements the `DualCallbackEventHandler` using
+    `watchdog`'s `PollingObserver`. Its only job is to detect relevant file
+    modifications and push file paths to the correct queues after their
+    respective delays.
+* **`linters.py`**: A stateless module that contains the logic for running
+    "check-only" commands (e.g., `ruff check`). It returns any violations
+    found.
+* **`formatters.py`**: A stateless module that contains the logic for running
+    "fixing" or "formatting" commands (e.g., `ruff format`,
+    `markdownlint --fix`).
 
-## Configuration and Setup
+## Local Development Setup
 
-The server is configured via the `mcp_settings.json` file used by the Gemini CLI. The two primary modes of operation are `stdio` and `http`.
+1. **Clone the repository.**
+2. **Install dependencies:**
 
-### STDIO Mode (Default and Recommended)
+    ```bash
+    uv pip install -e .
+    ```
 
-In this mode, the server communicates with the Gemini CLI over standard input/output. It does not open any network ports, which is ideal for local development as it is secure and avoids port conflicts.
+3. **Install Node.js dependencies:**
 
-**`mcp_settings.json` Example:**
+    ```bash
+    npm install
+    ```
 
-```json
-{
-  "servers": [
-    {
-      "name": "AutoLint",
-      "run": "uv run -m src.md_lint_mcp.main",
-      "transport": "stdio",
-      "cwd": "/path/to/your/monitored/project"
-    }
-  ]
-}
-```
+4. **Run the server:**
 
-### HTTP Mode (Optional)
+    ```bash
+    uv run python -m src.md_lint_mcp.main --mode auto --linters ruff,markdownlint --formatters ruff,markdownlint <!-- markdownlint-disable-line MD013 -->
+    ```
 
-This mode exposes the server on a network port. It is not required for the core functionality but can be useful for specific use cases.
-
-*   **Remote Monitoring**: You could run the server on a remote machine and have your local Gemini CLI connect to it.
-*   **Debugging**: It allows you to inspect the server's MCP endpoint (e.g., `http://localhost:8080/mcp/`) with tools like `curl`.
-
-**`mcp_settings.json` Example:**
-
-```json
-{
-  "servers": [
-    {
-      "name": "AutoLint",
-      "run": "uv run -m src.md_lint_mcp.main",
-      "transport": "http",
-      "host": "127.0.0.1",
-      "port": 8080,
-      "cwd": "/path/to/your/monitored/project"
-    }
-  ]
-}
-```
-
-The server code in `main.py` is already configured to handle both modes by reading the `MCP_TRANSPORT`, `MCP_HOST`, and `MCP_PORT` environment variables that the Gemini CLI sets at runtime based on this configuration.
+The server will start in the foreground, and you can test its behavior by
+modifying `.py` or `.md` files within the project directory.

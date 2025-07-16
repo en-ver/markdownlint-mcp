@@ -1,21 +1,28 @@
 {
-    "mcpServers": {
-        "AutoLint": {
-          "command": "uv",
-          "args": [
-            "run",
-            "-m",
-            "src.md_lint_mcp.main"
-          ],
-          "transport": "stdio",
-          "cwd": "/home/enver/github/md-lint-mcp"
-        }
-      },    
-    "fileFiltering": {
-        // "enableRecursiveFileSearch": true,
-        "respectGitIgnore": false
-    },
-    "checkpointing": {
-        "enabled": true
+  "mcpServers": {
+    // "AutoLint": {
+    //   "command": "uv",
+    //   "args": [
+    //     "run",
+    //     "-m",
+    //     "src.md_lint_mcp.main"
+    //   ],
+    //   "transport": "stdio",
+    //   "cwd": "/home/enver/github/md-lint-mcp"
+    // },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
     }
+  },    
+  "fileFiltering": {
+    // "enableRecursiveFileSearch": true,
+    "respectGitIgnore": false
+  },
+  "checkpointing": {
+    "enabled": true
+  }
 }

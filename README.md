@@ -1,225 +1,112 @@
-# MD Lint MCP Server
+# Auto-Lint MCP Server
 
-This project provides an intelligent "Markdown Linter" as a set of tools for an
-AI agent. It's an on-demand server that can be launched by a client (like
-Gemini CLI) to check and fix Markdown files.
+This project provides an intelligent, background-running server that
+automatically formats and lints your code, providing real-time feedback to AI
+agents and other development tools.
 
-## Features: Your Intelligent Markdown Assistant
+## Features: Your Automated Code Quality Assistant
 
-Stop wasting time on tedious Markdown formatting! This server acts as your
-personal assistant, ensuring your documentation is always clean, consistent, and
-professional. It integrates seamlessly with your AI agent to automate the
-entire linting process.
+Stop wasting time on tedious formatting and style checks! This server acts as
+your personal assistant, ensuring your code is always clean, consistent, and
+professional. It runs in the background, watching for file changes and fixing
+issues on the fly.
 
 ### Why You'll Love It
 
-* **Effortless Auto-Fixing**: When triggered, the `lint` tool automatically
-    corrects most formatting errors in your Markdown files. It handles
-    everything from extra spaces to inconsistent list styles, so you don't have
-    to.
-* **Focus on What Matters**: For complex issues that require a human touch
-    (like a heading that needs rephrasing), the server pinpoints the exact
-    problem. This lets you focus on creating great content, not on fighting
-    with formatting rules.
-* **On-Demand and Lightweight**: The server only runs when needed, so it won
-    bog down your system. It’s there when you need it and gone when you don’t.
-* **Customizable for Your Projects**: Do you have a specific style guide? The
-    server can read a local `.markdownlint-cli.jsonc` configuration file,
-    allowing you to tailor its rules to fit your project's unique needs.
+* **Delayed, Non-Disruptive Formatting**: The server waits for you to finish
+    your work. Code formatting is applied after a configurable quiet period
+    (defaulting to 60 seconds), so it never interrupts your typing.
+* **Instant Linting Feedback**: As soon as you save a file, the server runs
+    its linters and immediately updates its internal state with any non-fixable
+    violations. This allows a connected AI agent to see and fix problems in
+    near real-time.
+* **Stateful and Queryable**: The server exposes a
+    `resource://linting_violations` resource that always contains the complete
+    list of current errors in the project. This allows tools to be built on top
+    of a reliable source of truth for code quality.
+* **Extensible and Configurable**: Easily enable or disable specific linters
+    and formatters via command-line flags. The system is designed to be
+    extended with new tools for different languages.
+* **Efficient and Lightweight**: The server uses a reliable, low-impact
+    polling mechanism to watch for file changes and operates in the background
+    without bogging down your system.
 
-## Available Tools
+## How It Works
 
-This server provides the following tools for your AI agent:
+The server runs in a special `auto` mode. When you start it, it does the
+following:
 
-### `lint(file_path: str)`
-
-This is the primary tool for linting your Markdown files. It automatically
-corrects common formatting issues and reports any violations that may require
-manual changes.
-
-For violations that require manual changes, the agent can fix them or use
-inline directives to ignore them. To learn how to use inline directives, the
-agent can use the `get_inline_directives` resource. This ensures that you
-always have the final say on how your files are formatted.
-
-### `get_inline_directives()`
-
-This resource fetches the official documentation for inline directives from
-the `markdownlint` repository. It provides up-to-date information on how to
-use inline comments to control linting rules directly within a Markdown
-file.
+1. **Watches for file modifications** to `.py` and `.md` files.
+2. When a file is modified, it starts **two separate timers**:
+    * A **short-delay timer** for linting (default: 0.5s).
+    * A **long-delay timer** for formatting (default: 60s).
+3. When the **linting timer** finishes, it runs the appropriate linter (e.g.,
+    `ruff check`) and updates the `linting_violations` resource with any errors
+    that couldn't be auto-fixed.
+4. When the **formatting timer** finishes, it runs the appropriate formatter
+    (e.g., `ruff format`) on the file, cleaning up the code style.
 
 ## Installation
 
-This server is designed for easy installation and use as a command-line tool
-via `pipx`.
-
-### Prerequisites
-
-1. **Python 3.11+**
-2. **pipx**: A tool for installing and running Python applications in isolated
-    environments. If you don't have it, install it with:
-
-    ```bash
-    python3 -m pip install --user pipx
-    python3 -m pipx ensurepath
-    ```
-
-3. **Node.js and npm**: The underlying `markdownlint-cli` tool requires a
-    Node.js environment. Install it via your system's package manager (e.g.,
-    `apt`, `brew`, `yum`).
-4. **markdownlint-cli**: Once Node.js is installed, install the linter
-    globally:
-
-    ```bash
-    npm install -g markdownlint-cli
-    ```
-
-> [!NOTE]
-> Depending on how you installed Node.js, you may need to use `sudo` to run
-> `npm install -g`. To avoid this, we recommend using a Node Version
-> Manager ([nvm](https://github.com/nvm-sh/nvm)) to install Node.js and
-> npm. If you installed Node.js via a system package manager like `apt` or
-> `brew`, you are not required to use `nvm`, but you may need to prefix
-> the `npm` command with `sudo`.
-
-### Install the MCP Server
-
-With the prerequisites in place, install the server with a single `pipx`
-command:
-
-```bash
-pipx install --pip-args="--no-cache-dir --force-reinstall" git+https://github.com/en-ver/md-lint-mcp.git
-```
-
-This command automatically creates a virtual environment for the server,
-installs it, and makes the `md-lint-mcp-server` command available globally in
-your system's PATH.
-
-#### Verify the Installation
-
-After the installation is complete, you can verify that the server is
-accessible by running:
-
-```bash
-md-lint-mcp-server --version
-```
-
-You should see the version number printed to the console (e.g.,
-`md-lint-mcp-server 0.1.0`). This confirms that the server is correctly
-installed and ready to be used by your MCP client.
+This server is designed for local development and is not intended for a `pipx`
+installation. Please follow the developer setup guide.
 
 ## Usage with Gemini CLI
 
-To use this server, you must tell the Gemini CLI how to run it for your specific project. This is done by creating a configuration file inside your project directory.
+To use this server, you must tell the Gemini CLI how to run it for your
+specific project. This is done by creating a configuration file inside your
+project directory.
 
 ### Step 1: Create the Configuration File
 
-1. avigate to the root directory of the project you want to monitor.
-2. reate a new directory named `.gemini`.
-3. nside the `.gemini` directory, create a new file named `mcp_settings.json`.
-
-Your project structure should look like this:
-
-```
-your-project/
-├── .gemini/
-│   └── mcp_settings.json
-└── ... (your other project files)
-```
+1. Navigate to the root directory of the project you want to monitor.
+2. Create a new directory named `.gemini`.
+3. Inside the `.gemini` directory, create a new file named
+    `mcp_settings.json`.
 
 ### Step 2: Add the Configuration
 
 Copy and paste the following JSON into your `mcp_settings.json` file.
 
 > [!IMPORTANT]
-> You **must** replace `"/path/to/your/monitored/project"` with the **absolute path** to your project's root directory.
+> You **must** replace `"/path/to/your/monitored/project"` with the
+> **absolute path** to your project's root directory.
 
 ```json
 {
   "servers": [
     {
       "name": "AutoLint",
-      "run": "md-lint-mcp-server",
-      "transport": "stdio",
+      "run": "uv run python -m src.md_lint_mcp.main --mode auto --linters ruff,markdownlint --formatters ruff,markdownlint", <!-- markdownlint-disable-line MD013 -->
+      "transport": "http",
+      "host": "127.0.0.1",
+      "port": 8585,
       "cwd": "/path/to/your/monitored/project"
     }
   ]
 }
 ```
 
-**How to get the absolute path:**
-
-* inux or macOS, navigate to your project folder in the terminal and run the `pwd` command.
-* On Windows, you can get it from the address bar in File Explorer.
-
 ### Step 3: Start the Server
 
-The server will now start automatically in the background the first time the Gemini CLI needs to access one of its tools. Because it's a file watcher, it will remain running as long as the Gemini CLI is active in that project.
+The server will now start automatically in the background the first time the
+Gemini CLI is active in that project. When you modify a file, the `AutoLint`
+server will automatically format it and report any remaining issues.
 
-When you create or modify a Python or Markdown file, the `AutoLint` server will automatically format it and report any remaining issues directly into the agent's context, allowing it to fix them for you.
+## Command-Line Arguments
 
-## Customization
+You can customize the server's behavior using the following flags in the `run`
+command of your `mcp_settings.json`:
 
-You can tailor the linter's behavior to fit your project's specific style guide
-by creating a `.markdownlint-cli.jsonc` file in the root of your project
-directory. When the `lint` tool is run, it will automatically detect and apply
-the rules defined in this file.
-
-This allows you to:
-
-* Enable or disable specific rules.
-* Configure parameters for rules (e.g., set the allowed line length).
-* Extend pre-configured style guides.
-
-### Example Configuration
-
-Here is a simple example that disables the `line-length` rule:
-
-```json
-{
-  "config": {
-    "line-length": false
-  }
-}
-```
-
-### Finding Configuration Options
-
-The full set of configurable rules and options can be found in the official
-`markdownlint` JSON schema. This document is the definitive source for all
-available settings.
-
-Since this project installs `markdownlint-cli` directly on your machine, you
-are free to use all of its capabilities. We highly recommend consulting the
-official documentation to explore advanced features like creating custom rules,
-using different style guides, and more.
-
-> [!TIP]
-> We recommend exploring the schema to see all the ways you can customize the
-> linter to match your needs.
-> [View the official .markdownlint.jsonc schema](https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.jsonc)
-
-## Uninstall
-
-To remove the server and its dependencies, follow these steps to uninstall the
-packages installed by `pipx` and `npm`.
-
-> [!CAUTION]
-> This will not remove `pipx` or `Node.js` from your system, only the
-> packages related to this project.
-
-1. **Uninstall the MCP Server**:
-
-    ```bash
-    pipx uninstall md-lint-mcp
-    ```
-
-2. **Uninstall the Linter**:
-
-    ```bash
-    npm uninstall -g markdownlint-cli
-    ```
+* `--mode {auto,manual}`: The operational mode. `auto` is recommended.
+* `--linters {ruff,markdownlint}`: A comma-separated list of linters to
+    enable.
+* `--formatters {ruff,markdownlint}`: A comma-separated list of formatters to
+    enable.
+* `--lint-delay <seconds>`: The quiet period before running linters (default:
+    0.5).
+* `--format-delay <seconds>`: The quiet period before running formatters
+    (default: 60.0).
 
 ## For Developers
 

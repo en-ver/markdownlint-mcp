@@ -1,30 +1,57 @@
-import threading
-import os
-from .server import server
-from .watcher import start_watching
+import typer
+from typing_extensions import Annotated
 
-def main():
-    """Entry point for the AutoLint server."""
-    monitored_directory = os.getcwd()
+from .server import LintingServer
 
-    # Pass the server instance directly to the watcher
-    watcher_thread = threading.Thread(
-        target=start_watching, args=(monitored_directory, server), daemon=True
+
+def main(
+    mode: Annotated[
+        str,
+        typer.Option(
+            help="The operational mode: 'auto' or 'manual'.",
+            case_sensitive=False,
+        ),
+    ] = "manual",
+    watch_dir: Annotated[
+        str, typer.Option(help="The directory to watch for file changes.")
+    ] = ".",
+    linters: Annotated[
+        str,
+        typer.Option(
+            help="Comma-separated string of linters to use (e.g., 'ruff,markdownlint')."
+        ),
+    ] = "",
+    formatters: Annotated[
+        str,
+        typer.Option(
+            help="Comma-separated string of formatters to use (e.g., 'ruff')."
+        ),
+    ] = "",  # Default to no formatters
+    lint_delay: Annotated[
+        float,
+        typer.Option(help="Quiet period in seconds before linting."),
+    ] = 0.5,
+    format_delay: Annotated[
+        float,
+        typer.Option(help="Quiet period in seconds before formatting."),
+    ] = 5.0,  # Shortened default for easier testing
+):
+    """
+    Main entry point for the md-lint-mcp server.
+    """
+    formatter_list = [f.strip() for f in formatters.split(",") if f.strip()]
+
+    # Instantiate the main server class
+    server = LintingServer(
+        watch_dir=watch_dir,
+        enabled_formatters=formatter_list,
+        lint_delay=lint_delay,
+        format_delay=format_delay,
     )
-    watcher_thread.start()
 
-    # Get transport settings from environment variables set by the runner
-    transport = os.environ.get("MCP_TRANSPORT", "stdio")
-    
-    run_kwargs = {"transport": transport}
-    if transport == "http":
-        run_kwargs["host"] = os.environ.get("MCP_HOST", "127.0.0.1")
-        run_kwargs["port"] = int(os.environ.get("MCP_PORT", 8080))
+    # Start the server and its background components
+    server.start(mode=mode, port=8585, show_banner=False)
 
-    try:
-        server.run(**run_kwargs)
-    except KeyboardInterrupt:
-        print("Server shutting down.")
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
