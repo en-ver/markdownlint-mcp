@@ -77,7 +77,7 @@ Copy and paste the following JSON into your `mcp_settings.json` file.
   "servers": [
     {
       "name": "AutoLint",
-      "run": "uv run python -m src.md_lint_mcp.main --mode auto --linters ruff,markdownlint --formatters ruff,markdownlint", <!-- markdownlint-disable-line MD013 -->
+      "run": "uv run python -m src.agent_multitool.main --mode auto --linters ruff,markdownlint --formatters ruff,markdownlint", <!-- markdownlint-disable-line MD013 -->
       "transport": "http",
       "host": "127.0.0.1",
       "port": 8585,

@@ -37,7 +37,7 @@ def main(
     ] = 5.0,  # Shortened default for easier testing
 ):
     """
-    Main entry point for the md-lint-mcp server.
+    Main entry point for the agent-multitool server.
     """
     formatter_list = [f.strip() for f in formatters.split(",") if f.strip()]
 

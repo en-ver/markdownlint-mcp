@@ -92,7 +92,7 @@ feedback from less frequent, delayed formatting.
 4. **Run the server:**
 
     ```bash
-    uv run python -m src.md_lint_mcp.main --mode auto --linters ruff,markdownlint --formatters ruff,markdownlint <!-- markdownlint-disable-line MD013 -->
+    uv run python -m src.agent_multitool.main --mode auto --linters ruff,markdownlint --formatters ruff,markdownlint <!-- markdownlint-disable-line MD013 -->
     ```
 
 The server will start in the foreground, and you can test its behavior by
